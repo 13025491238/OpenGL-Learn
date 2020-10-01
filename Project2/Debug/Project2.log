@@ -1,2 +1,5 @@
 ﻿  main.cpp
+e:\opengllearn\opengllearn01\project2\project2\main.cpp(45): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+e:\opengllearn\opengllearn01\project2\project2\main.cpp(260): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\opengllearn\opengllearn01\project2\project2\main.cpp(261): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
   Project2.vcxproj -> E:\OpenglLearn\OpenglLearn01\Project2\Debug\Project2.exe
