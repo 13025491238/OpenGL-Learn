@@ -1,9 +1,5 @@
 #include "Shader.h"
 
-
-
-
-
 Shader::Shader(const char * vertexPath, const char * fragmentPath)
 {
 	//C++读取源文件为char*

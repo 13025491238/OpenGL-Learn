@@ -12,12 +12,31 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 const char *vertexShaderSource = "Shader/Shader3_8.vs";
 const char *fragmentShaderSource = "Shader/Shader3_8.fs";
 
 float screenWidth = 800;
 float screenHeight = 600;
+
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+
+float cameraSpeed = 2.0f;
+float deltaTime = 0.0f;
+float lastTime = 0.0f;
+
+glm::vec3 direction;
+float pitch = 0.0f;
+float yaw = -90.0f;
+float lastX = 400, lastY = 300;
+
+float fov = 45.0f;
+
 
 int main() {
 
@@ -50,7 +69,9 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-
+	
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouseCallback);
 
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -60,7 +81,7 @@ int main() {
 	}
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+	glfwSetScrollCallback(window, scroll_callback);
 
 
 	//float vertices[] = {
@@ -185,8 +206,6 @@ int main() {
 #pragma endregion
 
 
-
-
 	unsigned int VBO;
 	//unsigned int EBO;
 	unsigned int VAO;
@@ -265,10 +284,14 @@ int main() {
 
 		//translate 平移（偏差量）
 		//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
- 		view = glm::lookAt(glm::vec3(camX, 0.0f, camZ),glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f));
+		//lookAt（camera位置，目标位置，up向量)
+ 		//view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,1.0f,0.0f));
+		
+
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		//参数: fov(field of view)/aspect屏幕宽高比/近平面距离/原平面距离
-		projection = glm::perspective(glm::radians(45.0f), screenWidth / screenHeight, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(fov), screenWidth / screenHeight, 0.1f, 100.0f);
 
 		///shader里定义了三个uniform mat4 矩阵
 		//变换矩阵会经常变动
@@ -302,8 +325,64 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
+
 void processInput(GLFWwindow *window)
 {
+	float curTime = glfwGetTime();
+	deltaTime = curTime - lastTime;
+	lastTime = curTime;
+	float mCameraSpeed = cameraSpeed * deltaTime;
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += mCameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= mCameraSpeed * (glm::normalize(cross(cameraFront, cameraUp)));
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= mCameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += mCameraSpeed * (glm::normalize(cross(cameraFront, cameraUp)));
+}
+bool isFirst = true;
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+
+	if (isFirst) {
+		lastX = xpos;
+		lastY = ypos;
+		isFirst = false;
+	}
+	float xOffset = xpos - lastX;
+	float yOffset = ypos - lastY;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.05f;
+	xOffset *= sensitivity;
+	yOffset *= sensitivity;
+
+	yaw += xOffset;
+	pitch += yOffset;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+	cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	if (fov >= 1.0f && fov <= 45.0f)
+		fov -= yoffset;
+	if (fov <= 1.0f)
+		fov = 1.0f;
+	if (fov >= 45.0f)
+		fov = 45.0f;
 }
